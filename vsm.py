@@ -129,8 +129,8 @@ for f in files:
     axins.set_ylim(min(m_aux),max(m_aux))
     ax.indicate_inset_zoom(axins, edgecolor="black")
 
-    plt.savefig('VSM_'+f[:-4]+'.png',dpi=300)
-    plt.show()
+    plt.savefig(os.path.join(os.getcwd(),'Resultados','VSM_'+f[:-4]+'.png'),dpi=300,facecolor='w')
+    #plt.show()
 
 #%% Perpendicular
 files=os.listdir(os.path.join(os.getcwd(),'Perpendicular'))
@@ -221,8 +221,8 @@ for f in files:
     axins.set_ylim(min(m_aux),max(m_aux))
     ax.indicate_inset_zoom(axins, edgecolor="black")
     
-    plt.savefig('VSM_'+f[:-4]+'.png',dpi=300)
-    plt.show()
+    plt.savefig(os.path.join(os.getcwd(),'Resultados','VSM_'+f[:-4]+'.png'),dpi=300,facecolor='w')
+    #plt.show()
 #%% Axial
 files=os.listdir(os.path.join(os.getcwd(),'Axial'))
 lim_ajuste_A=10
@@ -314,15 +314,24 @@ for f in files:
     axins.set_ylim(min(m_aux),max(m_aux))
     ax.indicate_inset_zoom(axins, edgecolor="black")
     
-    plt.savefig('VSM_'+f[:-4]+'.png',dpi=300)
-    plt.show()
+    plt.savefig(os.path.join(os.getcwd(),'Resultados','VSM_'+f[:-4]+'.png'),dpi=300,facecolor='w')
+    #plt.show()
     
 #%%SUCEPTIBILIDAD vs ANGULO VERTICAL 
 #plt.close('all')
+delta_P=(max(pendientes_P)- min(pendientes_P))/max(pendientes_P)
+print(f'Delta Perpendicular: {delta_P*100:.0f} %')
+delta_A=(max(pendientes_A)- min(pendientes_A))/max(pendientes_A)
+print(f'Delta Axial: {delta_A*100:.0f} %')
+delta_R=(max(pendientes_R)- min(pendientes_P))/max(pendientes_P)
+print(f'Delta Random: {delta_R*100:.0f} %')
+
+
+#%%
 fig,ax=plt.subplots(nrows=1,figsize=(9,4),sharex=True,constrained_layout=True)
-ax.errorbar(x=angulo_P,y=pendientes_P,yerr=err_pend_P, fmt='.-', capsize=5,label=f'Perpendicular')
-ax.errorbar(x=angulo_A,y=pendientes_A,yerr=err_pend_A, fmt='.-', capsize=5,label=f'Axial')
-ax.errorbar(x=angulo_R,y=pendientes_R,yerr=err_pend_R, fmt='.-', capsize=5,label=f'Random')
+ax.errorbar(x=angulo_P,y=pendientes_P,yerr=err_pend_P, fmt='.-', capsize=5,label=f'$\Delta$P = {delta_P:.2f}')
+ax.errorbar(x=angulo_A,y=pendientes_A,yerr=err_pend_A, fmt='.-', capsize=5,label=f'$\Delta$A = {delta_A:.2f}')
+ax.errorbar(x=angulo_R,y=pendientes_R,yerr=err_pend_R, fmt='.-', capsize=5,label=f'$\Delta$R = {delta_R:.2f}')
 
 #ax.axhline(pendientes_Rd,0,1,c='k')
 ax.grid()
@@ -330,7 +339,7 @@ ax.legend()
 ax.set_ylabel('$\chi$')
 ax.set_title('Susceptibilidad vs angulo')
 
-xticks_values = angulo_R
+xticks_values = np.arange(0,375,15)
 xticks_labels = [str(i) for i in xticks_values]
 plt.xticks(xticks_values, xticks_labels,rotation=45)
 
@@ -339,8 +348,7 @@ plt.xticks(xticks_values, xticks_labels,rotation=45)
 # ax1.grid(True)
 # ax1.legend()
 plt.xlabel('Ángulo (º)')
-# delta_V=(max(pendientes_V)- min(pendientes_V))/max(pendientes_V)
-# print(delta_V)
+
 plt.savefig('Susceptibilidad_vs_angulo.png',dpi=300,facecolor='w')
 
 # %%
