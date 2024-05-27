@@ -41,89 +41,94 @@ plt.ylabel('m (emu/g)')
 plt.title('Capsula ac. laurico')
 
 #%% Muestra RANDOM
-
 files=os.listdir(os.path.join(os.getcwd(),'Random'))
 files.sort()
-masa_muestraRd=0.20945 #g
-masa_npmRd=0.0168 #g
-masa_lauricoRd=masa_muestraRd-masa_npmRd 
+lim_ajuste_R=10
+
+masa_muestra_R=0.24885 #g
+masa_npm_R=0.0912*masa_muestra_R #g
+masa_laurico_R=(1-0.0912)*masa_muestra_R #g
 
 campos=[]
 m_correg_norm=[]
 fname=[]
-Ms_Rd=[]
+Ms_R=[]
 
 H_aux = np.linspace(-50,50,1000)
 campo_lineal=[]
 m_interp=[]
 
-pendientes_Rd=[]
-err_pend_Rd=[]
-ordenadas_Rd=[]
+pendientes_R=[]
+err_pend_R=[]
+ordenadas_R=[]
 Mr=[]
 Hc=[]
+angulo_R=[]
 for f in files:
     B = np.loadtxt(os.path.join(os.getcwd(),'Random',f),skiprows=12)
     H = B[:,0]
     m = B[:,1]
     #calculo la contribucion diamagnetica del ac laurico y se la descuento
-    contrib_diamagRd = chi_mass_laurico*masa_lauricoRd*H
-    m_correg = (m-contrib_diamagRd)
-    m_correg_norm_masa=m_correg/masa_npmRd
-    
-    interpolador=interp1d(H,m_correg_norm_masa,fill_value='extrapolate')
-    m_interp.append(interpolador(H_aux))
-    
-    m_norm=m_correg_norm_masa/max(m_correg_norm_masa) #Normalizo por valor maximo
-    
+    contrib_diamag_R = chi_mass_laurico*masa_laurico_R*H
+    m_correg = (m-contrib_diamag_R)
+    m_correg_norm_masa=m_correg/masa_npm_R
+
+    #interpolador=interp1d(H,m_correg_norm_masa,fill_value='extrapolate')
+    #m_interp.append(interpolador(H_aux))
+
+    m_norm=m_correg_norm_masa/max(m_correg_norm_masa) #Normalizo momento magnetico por valor maximo
+
     m_correg_norm.append(m_norm)
     campos.append(np.array(H))
     fname.append(f.split('_')[-1].split('.')[0])
-    Ms_Rd.append(max(m_correg_norm_masa))
-    
-    (chi,n),pcov=curve_fit(lineal, H[np.nonzero(H<10)],m_norm[np.nonzero(H<10)]) #Ajuste lineal 
+    Ms_R.append(max(m_correg_norm_masa))
+    angulo_R.append(float(f.split('_')[-1].split('.')[0]))
+    #Ajuste lineal
+    (chi,n),pcov=curve_fit(lineal, H[np.nonzero(abs(H)<lim_ajuste_R)],m_norm[np.nonzero(abs(H)<lim_ajuste_R)])  
     err_m=pcov[0][0]
-    pendientes_Rd.append(chi)
-    err_pend_Rd.append(err_m)
-    ordenadas_Rd.append(n)
-    
-    H_aux = np.linspace(-10,10,5000)
-    H_recortado = H[np.nonzero(abs(H)<10)]
-    m_recortado = m_correg_norm_masa[np.nonzero(abs(H)<10)]
-    
-    interpolador2=interp1d(H_recortado,m_recortado,fill_value='extrapolate')
-    #m_new = interpolador2(H_aux)
-    m_new = lineal(H_aux,chi,n)
+    pendientes_R.append(chi)
+    err_pend_R.append(err_m)
+    ordenadas_R.append(n)
+
+    H_recortado = H[np.nonzero(abs(H)<=lim_ajuste_R)]
+    m_recortado = m_correg_norm_masa[np.nonzero(abs(H)<=lim_ajuste_R)]
+
+    H_aux = np.linspace(-lim_ajuste_R,lim_ajuste_R,5000)
+    m_aux = lineal(H_aux,chi,n)
+    R2= r2_score(m_norm[np.nonzero(abs(H)<=lim_ajuste_R)],lineal(H[np.nonzero(abs(H)<=lim_ajuste_R)],chi,n))
     indx_H = np.nonzero(H_aux>=0)[0][0]
-    indx_M = np.nonzero(m_new>0)[0][0]
+    indx_M = np.nonzero(m_aux>=0)[0][0]
     Hc.append(-H_aux[indx_M])
-    Mr.append(m_new[indx_H])
+    Mr.append(m_aux[indx_H])
     print('*'*50)
     print(f.split('_')[0], f.split('_')[-1])
     print('Susceptibilidad =',f'{chi:.3e}','+/-',f'{err_m:.3e}')
-    print(f'Mag Remanente = {m_new[indx_H]:.3e}')
+    print(f'Mag Remanente = {m_aux[indx_H]:.3e}')
     print(f'Campo Coercitivo = {H_aux[indx_M]:.3e} A/m')
+    print(f'R² = {R2:.3f}')
+
+
     fig,ax=plt.subplots(constrained_layout=True)
-    ax.plot(H,m/masa_npmRd,'.-',label='V')
-    ax.plot(H,m_correg_norm_masa,'.-',label='V (s/ laurico)')
+    ax.plot(H,m/masa_npm_R,'.-',label='R')
+    ax.plot(H,m_correg_norm_masa,'.-',label='R (s/ laurico)')
     ax.legend(ncol=2,loc='lower right')
     ax.grid()
     ax.set_xlabel('H (G)')
     ax.set_ylabel('m (emu/g)')
     ax.set_title(f)
-    
+
     axins = ax.inset_axes([0.3, 0.2, 0.69, 0.55])
     axins.axvline(0,0,1,c='k',lw=0.8)
     axins.axhline(0,0,1,c='k',lw=0.8)
     axins.plot(H,m_norm,'.-',label='m norm')
-    axins.plot(H_aux,lineal(H_aux,chi,n),'r-',label=f'$\chi$ = {chi:.3e}\nHc = {H_aux[indx_M]:.3e} A/m')
+    axins.plot(H_aux,m_aux,'r-',label=f'$\chi$ = {chi:.3e}\nR² = {R2:.3f}')
     axins.set_xlabel('H (G)')
     axins.grid()
     axins.legend(loc='lower right')
-    # axins.legend()
-    axins.set_xlim(-2,11)
-    axins.set_ylim(-0.01,.06)
+    axins.set_xlim(min(H_aux),max(H_aux))
+    axins.set_ylim(min(m_aux),max(m_aux))
     ax.indicate_inset_zoom(axins, edgecolor="black")
+
     plt.savefig('VSM_'+f[:-4]+'.png',dpi=300)
     plt.show()
 
@@ -133,8 +138,8 @@ files.sort()
 lim_ajuste_P=10
 
 masa_muestra_P=0.28993 #g
-masa_npm_P=0.0264 #g
-masa_laurico_P=0.2632
+masa_npm_P=0.0912*masa_muestra_P #g
+masa_laurico_P=(1-0.0912)*masa_muestra_P #g
 
 campos=[]
 m_correg_norm=[]
@@ -220,14 +225,13 @@ for f in files:
     plt.show()
 #%% Axial
 files=os.listdir(os.path.join(os.getcwd(),'Axial'))
-lim_ajuste_A=6
+lim_ajuste_A=10
 
 files.sort()
 
 masa_muestra_A=0.28993 #g
-masa_npm_A=0.0264 #g
-masa_laurico_A=0.2632
-
+masa_npm_A=0.0912*masa_muestra_A #g
+masa_laurico_A=(1-0.0912)*masa_muestra_A #g
 campos=[]
 m_correg_norm=[]
 fname=[]
@@ -316,8 +320,9 @@ for f in files:
 #%%SUCEPTIBILIDAD vs ANGULO VERTICAL 
 #plt.close('all')
 fig,ax=plt.subplots(nrows=1,figsize=(9,4),sharex=True,constrained_layout=True)
-ax.errorbar(x=angulo_P,y=pendientes_P,yerr=err_pend_P, fmt='.-', capsize=5,label=f'Lim ajuste {lim_ajuste_P}')
-ax.errorbar(x=angulo_A,y=pendientes_A,yerr=err_pend_A, fmt='.-', capsize=5,label=f'Lim ajuste {lim_ajuste_A}')
+ax.errorbar(x=angulo_P,y=pendientes_P,yerr=err_pend_P, fmt='.-', capsize=5,label=f'Perpendicular')
+ax.errorbar(x=angulo_A,y=pendientes_A,yerr=err_pend_A, fmt='.-', capsize=5,label=f'Axial')
+ax.errorbar(x=angulo_R,y=pendientes_R,yerr=err_pend_R, fmt='.-', capsize=5,label=f'Random')
 
 #ax.axhline(pendientes_Rd,0,1,c='k')
 ax.grid()
@@ -325,7 +330,7 @@ ax.legend()
 ax.set_ylabel('$\chi$')
 ax.set_title('Susceptibilidad vs angulo')
 
-xticks_values = angulo_P
+xticks_values = angulo_R
 xticks_labels = [str(i) for i in xticks_values]
 plt.xticks(xticks_values, xticks_labels,rotation=45)
 
