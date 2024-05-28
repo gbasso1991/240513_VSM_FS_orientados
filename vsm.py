@@ -1,7 +1,4 @@
-#%%
-"""
-VSM 
-"""
+#%% VSM -  Ferrosolidos (ferrotec + laurico)
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
@@ -11,7 +8,7 @@ from sklearn.metrics import r2_score
 
 def lineal(x,m,n):
     return m*x+n
-#%% LAURICO S/ NPM
+#%% XI LAURICO S/ NPM
 
 C = np.loadtxt('Laurico_240411.txt',skiprows=12)
 mL=0.2874 #g
@@ -40,7 +37,7 @@ plt.xlabel('H (G)')
 plt.ylabel('m (emu/g)')
 plt.title('Capsula ac. laurico')
 
-#%% Muestra RANDOM
+#%% XI RANDOM
 files=os.listdir(os.path.join(os.getcwd(),'Random'))
 files.sort()
 lim_ajuste_R=10
@@ -132,7 +129,7 @@ for f in files:
     plt.savefig(os.path.join(os.getcwd(),'Resultados','VSM_'+f[:-4]+'.png'),dpi=300,facecolor='w')
     #plt.show()
 
-#%% Perpendicular
+#%% XI PERPENDICULAR
 files=os.listdir(os.path.join(os.getcwd(),'Perpendicular'))
 files.sort()
 lim_ajuste_P=10
@@ -223,13 +220,13 @@ for f in files:
     
     plt.savefig(os.path.join(os.getcwd(),'Resultados','VSM_'+f[:-4]+'.png'),dpi=300,facecolor='w')
     #plt.show()
-#%% Axial
+#%% XI Axial
 files=os.listdir(os.path.join(os.getcwd(),'Axial'))
 lim_ajuste_A=10
 
 files.sort()
 
-masa_muestra_A=0.28993 #g
+masa_muestra_A=0.27065 #g
 masa_npm_A=0.0912*masa_muestra_A #g
 masa_laurico_A=(1-0.0912)*masa_muestra_A #g
 campos=[]
@@ -317,25 +314,32 @@ for f in files:
     plt.savefig(os.path.join(os.getcwd(),'Resultados','VSM_'+f[:-4]+'.png'),dpi=300,facecolor='w')
     #plt.show()
     
-#%%SUCEPTIBILIDAD vs ANGULO VERTICAL 
+#%% SUCEPTIBILIDAD (cgs) vs ANGULO 
 #plt.close('all')
-delta_P=(max(pendientes_P)- min(pendientes_P))/max(pendientes_P)
-print(f'Delta Perpendicular: {delta_P*100:.0f} %')
-delta_A=(max(pendientes_A)- min(pendientes_A))/max(pendientes_A)
-print(f'Delta Axial: {delta_A*100:.0f} %')
-delta_R=(max(pendientes_R)- min(pendientes_P))/max(pendientes_P)
-print(f'Delta Random: {delta_R*100:.0f} %')
+
+xi_mean_P=np.mean(pendientes_P)
+xi_mean_A=np.mean(pendientes_A)
+xi_mean_R=np.mean(pendientes_R)
+
+delta_chi_P=(max(pendientes_P)- min(pendientes_P))/xi_mean_P
+print(f'Delta Perpendicular: {delta_chi_P*100:.0f} %')
+delta_chi_A=(max(pendientes_A)- min(pendientes_A))/xi_mean_A
+print(f'Delta Axial: {delta_chi_A*100:.0f} %')
+delta_chi_R=(max(pendientes_R)- min(pendientes_R))/xi_mean_R
+print(f'Delta Random: {delta_chi_R*100:.0f} %')
 
 
-#%%
-fig,ax=plt.subplots(nrows=1,figsize=(9,4),sharex=True,constrained_layout=True)
-ax.errorbar(x=angulo_P,y=pendientes_P,yerr=err_pend_P, fmt='.-', capsize=5,label=f'$\Delta$P = {delta_P:.2f}')
-ax.errorbar(x=angulo_A,y=pendientes_A,yerr=err_pend_A, fmt='.-', capsize=5,label=f'$\Delta$A = {delta_A:.2f}')
-ax.errorbar(x=angulo_R,y=pendientes_R,yerr=err_pend_R, fmt='.-', capsize=5,label=f'$\Delta$R = {delta_R:.2f}')
+fig,ax=plt.subplots(nrows=1,figsize=(11,4.5),sharex=True,constrained_layout=True)
+ax.errorbar(x=angulo_P,y=pendientes_P,yerr=err_pend_P, fmt='.-', capsize=5,label=f'$\Delta$P = {delta_chi_P:.2f}')
+ax.errorbar(x=angulo_A,y=pendientes_A,yerr=err_pend_A, fmt='.-', capsize=5,label=f'$\Delta$A = {delta_chi_A:.2f}')
+ax.errorbar(x=angulo_R,y=pendientes_R,yerr=err_pend_R, fmt='.-', capsize=5,label=f'$\Delta$R = {delta_chi_R:.2f}')
 
-#ax.axhline(pendientes_Rd,0,1,c='k')
+ax.hlines(xi_mean_P,0,360,ls='-.',color='tab:blue',label=rf'<$\chi_P$> = {xi_mean_P:.1e}')
+ax.hlines(xi_mean_A,0,360,ls='-.',color='tab:orange',label=fr'<$\chi_A$> = {xi_mean_A:.1e}')
+ax.hlines(xi_mean_R,0,360,ls='-.',color='tab:green',label=rf'<$\chi_R$> = {xi_mean_R:.1e}')
+
 ax.grid()
-ax.legend()
+ax.legend(ncol=2)
 ax.set_ylabel('$\chi$')
 ax.set_title('Susceptibilidad vs angulo')
 
@@ -348,7 +352,40 @@ plt.xticks(xticks_values, xticks_labels,rotation=45)
 # ax1.grid(True)
 # ax1.legend()
 plt.xlabel('Ángulo (º)')
+#plt.savefig('Susceptibilidad_vs_angulo.png',dpi=300,facecolor='w')
+plt.show()
+#%% MAG SATURACION vs ANGULO
+Ms_P_mean=np.mean(Ms_P)
+Ms_A_mean=np.mean(Ms_A)
+Ms_R_mean=np.mean(Ms_R)
 
-plt.savefig('Susceptibilidad_vs_angulo.png',dpi=300,facecolor='w')
+delta_Ms_P=(max(Ms_P)- min(Ms_P))/Ms_P_mean
+print(f'Delta Perpendicular: {delta_Ms_P*100:.0f} %')
+delta_Ms_A=(max(Ms_A)- min(Ms_A))/Ms_A_mean
+print(f'Delta Axial: {delta_Ms_A*100:.0f} %')
+delta_Ms_R=(max(Ms_R)- min(Ms_R))/Ms_R_mean
+print(f'Delta Random: {delta_Ms_R*100:.0f} %')
 
+fig,ax=plt.subplots(nrows=1,figsize=(10,4),sharex=True,constrained_layout=True)
+
+ax.hlines(Ms_P_mean,0,360,ls='-.',color='tab:blue',label=rf'<M$_s^P$> = {Ms_P_mean:.1f} emu/g')
+ax.hlines(Ms_A_mean,0,360,ls='-.',color='tab:orange',label=fr'<M$_s^A$> = {Ms_A_mean:.1f} emu/g')
+ax.hlines(Ms_R_mean,0,360,ls='-.',color='tab:green',label=rf'<M$_s^R$> = {Ms_R_mean:.1f} emu/g')
+
+ax.plot(angulo_P,Ms_P,'.-',label=f'$\Delta$M$_s^P$ = {delta_Ms_P*100:.1f} %')
+ax.plot(angulo_A,Ms_A,'.-',label=f'$\Delta$M$_s^A$ = {delta_Ms_A*100:.1f} %')
+ax.plot(angulo_R,Ms_R,'.-',label=f'$\Delta$M$_s^R$ = {delta_Ms_R*100:.1f} %')
+
+ax.grid()
+ax.legend(ncol=2)
+ax.set_ylabel('M$_s$ (emu/g)')
+ax.set_title('Magnetizacion de Saturacion vs angulo')
+
+xticks_values = np.arange(0,375,15)
+xticks_labels = [str(i) for i in xticks_values]
+plt.xticks(xticks_values, xticks_labels,rotation=45)
+
+plt.xlabel('Ángulo (º)')
+plt.savefig('Mag_saturacion_vs_angulo.png',dpi=300)
+plt.show()
 # %%
